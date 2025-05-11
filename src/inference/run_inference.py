@@ -141,7 +141,6 @@
 # if __name__ == "__main__":
 #     main()
 
-
 #!/usr/bin/env python3
 """
 End-to-end inference script: preprocess a single person+cloth pair, run the try-on model via the copied test.py,

@@ -36,22 +36,46 @@ def load_model(checkpoint_path: str, device: torch.device) -> U2NET:
     return net
 
 
+# def generate_mask(
+#     net: U2NET, img_path: str, transform: transforms.Compose, device: torch.device
+# ) -> Image.Image:
+#     """
+#     Run a single image through U²-Net and return a binary PIL mask.
+#     """
+#     img = Image.open(img_path).convert("RGB")
+#     tensor = transform(img).unsqueeze(0).to(device)
+
+#     with torch.no_grad():
+#         pred = net(tensor)[0]  # [4, H, W]
+#         prob = F.softmax(pred, dim=0)  # class probabilities
+#         cls = torch.argmax(prob, dim=0)  # [H, W]
+
+#     mask = (cls.cpu().numpy() != 0).astype(np.uint8) * 255
+#     return Image.fromarray(mask)
+
+
 def generate_mask(
     net: U2NET, img_path: str, transform: transforms.Compose, device: torch.device
 ) -> Image.Image:
     """
-    Run a single image through U²-Net and return a binary PIL mask.
+    Run U²-Net on a single image and return a binary PIL mask.
     """
+    # Load and preprocess
     img = Image.open(img_path).convert("RGB")
-    tensor = transform(img).unsqueeze(0).to(device)
+    tensor = transform(img).unsqueeze(0).to(device)  # [1,3,H,W]
 
     with torch.no_grad():
-        pred = net(tensor)[0]  # [4, H, W]
-        prob = F.softmax(pred, dim=0)  # class probabilities
-        cls = torch.argmax(prob, dim=0)  # [H, W]
+        outputs = net(tensor)  # tuple of 7 tensors, each [1,1,H,W]
+        saliency = outputs[0]  # first side output
+        saliency = saliency.squeeze(0).squeeze(0)  # → [H, W] tensor
+        arr = saliency.cpu().numpy()
 
-    mask = (cls.cpu().numpy() != 0).astype(np.uint8) * 255
-    return Image.fromarray(mask)
+    # Normalize to [0,1]
+    arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
+    # Threshold to binary
+    mask = (arr > 0.5).astype(np.uint8) * 255
+
+    return Image.fromarray(mask)  # [H, W] grayscale PIL image
 
 
 def batch_process(
