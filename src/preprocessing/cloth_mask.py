@@ -54,28 +54,71 @@ def load_model(checkpoint_path: str, device: torch.device) -> U2NET:
 #     return Image.fromarray(mask)
 
 
+# def generate_mask(
+#     net: U2NET, img_path: str, transform: transforms.Compose, device: torch.device
+# ) -> Image.Image:
+#     """
+#     Run U²-Net on a single image and return a binary PIL mask.
+#     """
+#     # Load and preprocess
+#     img = Image.open(img_path).convert("RGB")
+#     tensor = transform(img).unsqueeze(0).to(device)  # [1,3,H,W]
+
+#     with torch.no_grad():
+#         outputs = net(tensor)  # tuple of 7 tensors, each [1,1,H,W]
+#         saliency = outputs[0]  # first side output
+#         saliency = saliency.squeeze(0).squeeze(0)  # → [H, W] tensor
+#         arr = saliency.cpu().numpy()
+
+#     # Normalize to [0,1]
+#     arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
+#     # Threshold to binary
+#     mask = (arr > 0.5).astype(np.uint8) * 255
+
+#     return Image.fromarray(mask)  # [H, W] grayscale PIL image
+
+
 def generate_mask(
-    net: U2NET, img_path: str, transform: transforms.Compose, device: torch.device
+    net, img_path: str, transform: transforms.Compose, device: torch.device
 ) -> Image.Image:
     """
     Run U²-Net on a single image and return a binary PIL mask.
+    Handles both tuple and single‐tensor outputs.
     """
-    # Load and preprocess
+    # 1) Load & preprocess
     img = Image.open(img_path).convert("RGB")
     tensor = transform(img).unsqueeze(0).to(device)  # [1,3,H,W]
 
+    # 2) Run inference
     with torch.no_grad():
-        outputs = net(tensor)  # tuple of 7 tensors, each [1,1,H,W]
-        saliency = outputs[0]  # first side output
-        saliency = saliency.squeeze(0).squeeze(0)  # → [H, W] tensor
-        arr = saliency.cpu().numpy()
+        preds = net(tensor)
+        # If net outputs a tuple/list, pick the first element
+        if isinstance(preds, (tuple, list)):
+            d1 = preds[0]
+        else:
+            d1 = preds
 
-    # Normalize to [0,1]
+        # Ensure d1 is at least 3‐D
+        # case A: [1, 1, H, W]
+        # case B: [1, H, W]
+        # case C: [H, W]
+        if d1.dim() == 4:
+            sal = d1[0, 0]  # shape [H, W]
+        elif d1.dim() == 3:
+            sal = d1[0]  # shape [H, W]
+        elif d1.dim() == 2:
+            sal = d1  # shape [H, W]
+        else:
+            raise RuntimeError(f"Unexpected U2NET output shape: {d1.shape}")
+
+        arr = sal.cpu().numpy()
+
+    # 3) Normalize & threshold
     arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
-    # Threshold to binary
-    mask = (arr > 0.5).astype(np.uint8) * 255
+    mask_arr = (arr > 0.5).astype(np.uint8) * 255  # binary mask
 
-    return Image.fromarray(mask)  # [H, W] grayscale PIL image
+    # 4) Return a 2-D PIL image
+    return Image.fromarray(mask_arr)
 
 
 def batch_process(

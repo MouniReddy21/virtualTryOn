@@ -41,7 +41,7 @@ def batch_remove(input_dir: str, output_dir: str) -> None:
     Walks through input_dir, applies background removal to each image,
     and writes the RGBA PNG to output_dir preserving subfolders.
     """
-    VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+    VALID_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
     for root, _, files in os.walk(input_dir):
         for fname in files:
             ext = os.path.splitext(fname)[1].lower()
@@ -49,7 +49,7 @@ def batch_remove(input_dir: str, output_dir: str) -> None:
                 continue
             in_path = os.path.join(root, fname)
             rel_path = os.path.relpath(in_path, input_dir)
-            out_path = os.path.join(output_dir, os.path.splitext(rel_path)[0] + '.png')
+            out_path = os.path.join(output_dir, os.path.splitext(rel_path)[0] + ".png")
             os.makedirs(os.path.dirname(out_path), exist_ok=True)
 
             try:
@@ -66,12 +66,10 @@ def parse_args() -> argparse.Namespace:
         description="Batch remove backgrounds from all images in a directory."
     )
     parser.add_argument(
-        '--input-dir', '-i', required=True,
-        help='Directory of input images.'
+        "--input-dir", "-i", required=True, help="Directory of input images."
     )
     parser.add_argument(
-        '--output-dir', '-o', required=True,
-        help='Directory to save RGBA outputs.'
+        "--output-dir", "-o", required=True, help="Directory to save RGBA outputs."
     )
     return parser.parse_args()
 
@@ -81,5 +79,5 @@ def main():
     batch_remove(args.input_dir, args.output_dir)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

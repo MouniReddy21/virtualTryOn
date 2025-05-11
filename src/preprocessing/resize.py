@@ -8,10 +8,12 @@ import argparse
 from PIL import Image
 
 # Supported image extensions
-VALID_EXTS = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff'}
+VALID_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff"}
 
 
-def resize_image_file(input_path: str, output_path: str, size: tuple[int, int], resample: int) -> None:
+def resize_image_file(
+    input_path: str, output_path: str, size: tuple[int, int], resample: int
+) -> None:
     """
     Resize a single image and save it.
     """
@@ -27,7 +29,9 @@ def resize_image_file(input_path: str, output_path: str, size: tuple[int, int], 
     print(f"Resized: {input_path} -> {output_path}")
 
 
-def batch_resize(src_dir: str, dst_dir: str, size: tuple[int, int], resample: int) -> None:
+def batch_resize(
+    src_dir: str, dst_dir: str, size: tuple[int, int], resample: int
+) -> None:
     """
     Walk src_dir, resize all images, and save to dst_dir preserving relative paths.
     """
@@ -49,24 +53,22 @@ def parse_args() -> argparse.Namespace:
         description="Batch resize images from a source directory into a destination directory."
     )
     parser.add_argument(
-        "--src-dir", required=True,
-        help="Path to input directory containing images."
+        "--src-dir", required=True, help="Path to input directory containing images."
     )
     parser.add_argument(
-        "--dst-dir", required=True,
-        help="Path to output directory for resized images."
+        "--dst-dir", required=True, help="Path to output directory for resized images."
     )
     parser.add_argument(
-        "--width", type=int, required=True,
-        help="Target width in pixels."
+        "--width", type=int, required=True, help="Target width in pixels."
     )
     parser.add_argument(
-        "--height", type=int, required=True,
-        help="Target height in pixels."
+        "--height", type=int, required=True, help="Target height in pixels."
     )
     parser.add_argument(
-        "--resample", choices=['nearest', 'bilinear', 'bicubic', 'lanczos'],
-        default='bilinear', help="Resampling filter."
+        "--resample",
+        choices=["nearest", "bilinear", "bicubic", "lanczos"],
+        default="bilinear",
+        help="Resampling filter.",
     )
     return parser.parse_args()
 
@@ -76,10 +78,10 @@ def get_resample_filter(name: str) -> int:
     Map resample name to PIL constant.
     """
     return {
-        'nearest': Image.NEAREST,
-        'bilinear': Image.BILINEAR,
-        'bicubic': Image.BICUBIC,
-        'lanczos': Image.LANCZOS
+        "nearest": Image.NEAREST,
+        "bilinear": Image.BILINEAR,
+        "bicubic": Image.BICUBIC,
+        "lanczos": Image.LANCZOS,
     }[name]
 
 
@@ -91,5 +93,5 @@ def main():
     batch_resize(args.src_dir, args.dst_dir, size, resample)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
