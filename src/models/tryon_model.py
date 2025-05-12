@@ -167,17 +167,14 @@ class TryOnModel:
         self.warp.eval()
 
         # 3) Composer (ALIASGenerator)
-        # self.comp = ALIASGenerator(opt, input_nc=opt.input_nc)
-        # self.comp.load_state_dict(torch.load(comp_ckpt, map_location="cpu"))
-        # self.comp.eval()
-        # ALIASGenerator’s `x` input is the person image: 3 channels
-        # 3) Composer (ALIASGenerator)
-        #   - input_nc = 3(person) + 3(pose) + 3(warped cloth) = 9
-        #   - semantic_nc should remain 13 (so ALIASNorm sees label_nc=14 with the extra misalign mask)
+        #    The checkpoint was trained with semantic_nc=7 (7 parse channels)
+        #    + 1 misalign mask = 8 label_nc, and input_nc=3 person +3 pose +3 warped cloth = 9.
+        orig_sem = opt.semantic_nc
+        opt.semantic_nc = 7
         self.comp = ALIASGenerator(opt, input_nc=9)
-        # load the trained weights
         self.comp.load_state_dict(torch.load(comp_ckpt, map_location="cpu"))
         self.comp.eval()
+        opt.semantic_nc = orig_sem
 
     # @torch.no_grad()
     # def infer(self, person_t, cloth_t, cloth_mask, parse_map, pose_img):
