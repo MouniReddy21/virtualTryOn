@@ -477,7 +477,8 @@ class GMM(nn.Module):
         self.extractionB = FeatureExtraction(inputB_nc, ngf=64, num_layers=4)
         self.correlation = FeatureCorrelation()
         self.regression = FeatureRegression(
-            input_nc=(opt.load_width // 64) * (opt.load_height // 64),
+            # correlation has width/16 * height/16 channels
+            input_nc=(opt.load_width // 16) * (opt.load_height // 16),
             output_size=2 * opt.grid_size**2,
         )
         self.gridGen = TpsGridGen(opt)

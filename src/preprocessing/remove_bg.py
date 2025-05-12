@@ -81,3 +81,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+#  in models/u2net/___init__.py:
+# from .model.u2net import U2NET
+
+# __all__ = ['U2NET']

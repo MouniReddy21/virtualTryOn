@@ -6,8 +6,8 @@ Steps:
  1. Copy & resize cloth & person images
  2. Generate cloth mask via U²-Net
  3. Remove background from person via rembg
- 4. Parse human segmentation via SCHP
- 5. Estimate pose via OpenPose or MediaPipe
+ 4. Parse human segmentation via DeepLabV3-based parse_human
+ 5. Estimate pose via MediaPipe or OpenPose
 
 Outputs all artifacts under a single --out-dir, preserving the structure:
     out-dir/
@@ -21,7 +21,6 @@ Outputs all artifacts under a single --out-dir, preserving the structure:
 import os
 import argparse
 import shutil
-from uuid import uuid4
 from PIL import Image
 import numpy as np
 import torch
@@ -116,13 +115,16 @@ def run_all(
     # 4. Remove background from person
     print("Removing background from person image...")
     rgba = remove_background(os.path.join(image_dir, image_fname))
-    Image.fromarray(rgba).save(os.path.join(image_dir, image_fname))
+    # Convert RGBA to RGB before saving as JPEG
+    img_rgba = Image.fromarray(rgba)
+    img_rgb = img_rgba.convert("RGB")
+    img_rgb.save(os.path.join(image_dir, image_fname))
 
     # 5. Human parsing
     print("Parsing human segmentation...")
-    img_arr = np.array(Image.fromarray(rgba).convert("RGB"), dtype=np.uint8)
+    img_arr = np.array(img_rgb, dtype=np.uint8)
     parse_map = parse_human(img_arr, parse_ckpt, parse_dataset)
-    Image.fromarray(parse_map).save(
+    Image.fromarray((parse_map * 255).astype("uint8")).save(
         os.path.join(image_parse_dir, os.path.splitext(image_fname)[0] + ".png")
     )
 

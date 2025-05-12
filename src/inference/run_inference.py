@@ -247,7 +247,10 @@ def main():
         f.write(f"{os.path.basename(args.person)} {os.path.basename(args.cloth)}")
 
     # Step 3: run the copied test.py in this repo
-    test_py = os.path.join(SCRIPT_DIR, "test.py")
+    # test_py = os.path.join(SCRIPT_DIR, "test.py")
+    PROJECT_ROOT = os.path.abspath(os.path.join(SCRIPT_DIR, "..", ".."))
+    test_py = os.path.join(PROJECT_ROOT, "test.py")
+
     if not os.path.exists(test_py):
         raise FileNotFoundError(f"test.py not found in {SCRIPT_DIR}")
     cmd = [
