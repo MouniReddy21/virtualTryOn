@@ -552,7 +552,14 @@ class ALIASNorm(nn.Module):
     def forward(self, x, seg, misalign_mask=None):
         # Part 1. Generate parameter-free normalized activations.
         b, c, h, w = x.size()
-        noise = (torch.randn(b, w, h, 1).cuda() * self.noise_scale).transpose(1, 3)
+        # noise = (torch.randn(b, w, h, 1).cuda() * self.noise_scale).transpose(1, 3)  # for gpu
+        # make noise on the same device as x
+        device = x.device  # for cpu
+        noise = (
+            torch.randn(b, w, h, 1, device=device) * self.noise_scale.to(device)
+        ).transpose(
+            1, 3
+        )  # for cpu
 
         if misalign_mask is None:
             normalized = self.param_free_norm(x + noise)

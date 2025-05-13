@@ -304,10 +304,15 @@ def run_all(
 
     # 4. Remove background from person
     print("Removing background from person image...")
-    rgba = remove_background(os.path.join(image_dir, image_fname))
+    # rgba = remove_background(os.path.join(image_dir, image_fname)) # temporary comment, for gpu enable
+    print("→ background removal done")
     # Convert RGBA to RGB before saving as JPEG
-    img_rgba = Image.fromarray(rgba)
-    img_rgb = img_rgba.convert("RGB")
+    # img_rgba = Image.fromarray(rgba) # temporary comment for gpu enable
+    # img_rgb = img_rgba.convert("RGB") # temporary comment for gpu enable
+    img_rgb = Image.open(os.path.join(image_dir, image_fname)).convert(
+        "RGB"
+    )  # for gpu remove
+
     img_rgb.save(os.path.join(image_dir, image_fname))
 
     # 5. Human parsing

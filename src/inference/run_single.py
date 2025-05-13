@@ -363,9 +363,21 @@ def main():
     mask_p = os.path.join(
         inp, "cloth-mask", sorted(os.listdir(os.path.join(inp, "cloth-mask")))[0]
     )
-    parse_p = os.path.join(
-        inp, "image-parse", sorted(os.listdir(os.path.join(inp, "image-parse")))[0]
-    )
+    parse_dir = os.path.join(inp, "image-parse")
+    if not os.path.isdir(parse_dir):
+        raise FileNotFoundError(f"Expected directory not found: {parse_dir}")
+    parse_files = [
+        f for f in sorted(os.listdir(parse_dir)) if f.lower().endswith((".png", ".jpg"))
+    ]
+    if not parse_files:
+        raise FileNotFoundError(
+            f"No human‐parse maps in {parse_dir}. "
+            "Did you run `python -m src.processing.runner` first?"
+        )
+    parse_p = os.path.join(parse_dir, parse_files[0])
+    # parse_p = os.path.join(
+    #     inp, "image-parse", sorted(os.listdir(os.path.join(inp, "image-parse")))[0]
+    # )
     pose_p = os.path.join(
         inp, "openpose-img", sorted(os.listdir(os.path.join(inp, "openpose-img")))[0]
     )
