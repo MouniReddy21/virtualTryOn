@@ -16,6 +16,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from torchvision import transforms
+import cv2
 
 # Import the U2NET model; adjust this path if your project structure differs
 from src.models.u2net.model.u2net import U2NET
@@ -73,7 +74,25 @@ def generate_mask(
 
     # 3) Normalize & threshold
     arr = (arr - arr.min()) / (arr.max() - arr.min() + 1e-8)
-    mask_arr = (arr > 0.5).astype(np.uint8) * 255  # binary mask
+    # mask_arr = (arr > 0.5).astype(np.uint8) * 255  # raw binary mask
+    # convert to 8-bit gray
+    sal8 = (arr * 255).astype(np.uint8)
+
+    # 3a) Otsu’s method to find optimal threshold
+    _, mask_arr = cv2.threshold(sal8, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+
+    # 3b) keep only the *largest* connected component
+    n, labels, stats, _ = cv2.connectedComponentsWithStats(mask_arr, connectivity=8)
+    if n > 1:
+        # skip label 0 (background)
+        largest = stats[1:, cv2.CC_STAT_AREA].argmax() + 1
+        mask_arr = np.where(labels == largest, 255, 0).astype(np.uint8)
+
+    # 3c) smooth & fill holes: a modest closing + optional opening
+    k1 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (9, 9))
+    mask_arr = cv2.morphologyEx(mask_arr, cv2.MORPH_CLOSE, k1, iterations=2)
+    k2 = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    mask_arr = cv2.morphologyEx(mask_arr, cv2.MORPH_OPEN, k2, iterations=1)
 
     # 4) Return a 2-D PIL image
     return Image.fromarray(mask_arr)
