@@ -80,11 +80,15 @@ def main():
     person_full = load_image(person_p).resize((W_full, H_full), Image.BILINEAR)
     cloth_full = load_image(cloth_p).resize((W_full, H_full), Image.BILINEAR)
     mask_full = load_image(mask_p, "L").resize((W_full, H_full), Image.NEAREST)
-    parse_full = load_image(parse_p, "L").resize((W_full, H_full), Image.NEAREST)
+    # parse_full = load_image(parse_p, "L").resize((W_full, H_full), Image.NEAREST)
+    # Open the SCHP PNG _with_ its palette indices intact:
+    # parse_full = Image.open(parse_p).resize((W_full, H_full), Image.NEAREST)
+    parse_full = Image.open(parse_p).resize((W_full, H_full), Image.NEAREST)
+
     pose_full = pose_p  # path for later
 
     # ─── 2) Build `opt` exactly as your segmentation/GMM/ALIAS were trained ────────
-    seg_h, seg_w = 192, 256  # segmentation input resolution
+    seg_h, seg_w = 256, 192  # segmentation input resolution
     opt = SimpleNamespace(
         input_nc=13 + 8,  # 1 mask + 3 cloth + 13 parse + 3 pose + 1 noise = 21
         semantic_nc=13,
@@ -119,16 +123,22 @@ def main():
     pose_ds = load_pose_render(pose_p, (seg_w, seg_h))
 
     # to tensors
-    person_t = image_to_tensor(person_ds).to(device)  # [1,3,192,256]
-    cloth_t = image_to_tensor(cloth_ds).to(device)  # [1,3,192,256]
-    mask_t = image_to_tensor(mask_ds, False).to(device)  # [1,1,192,256]
+    person_t = image_to_tensor(person_ds, True).to(device)  # [1,3,192,256]
+    cloth_t = image_to_tensor(cloth_ds, True).to(device)  # [1,3,192,256]
+    mask_t = image_to_tensor(mask_ds, True).to(device)  # [1,1,192,256]
 
     # one-hot parse: (13,H,W) → [1,13,H,W]
     parse_np = np.array(parse_ds, dtype=np.int64)
+    print("unique labels in parse_np:", np.unique(parse_np))
     parse_oh = np.stack([(parse_np == c).astype(np.uint8) for c in range(13)], axis=0)
-    parse_t = torch.from_numpy(parse_oh).float().unsqueeze(0).to(device)
+    # parse_t = torch.from_numpy(parse_oh).float().unsqueeze(0).to(device)
+    parse_t = torch.from_numpy(parse_oh).float().unsqueeze(0)
+    # map {0,1} → {–1,+1}
+    parse_t = parse_t.mul(2.0).sub(1.0).to(device)
 
-    pose_t = pose_ds.to(device)  # [1,3,192,256]
+    # pose_t = pose_ds.to(device)  # [1,3,192,256]
+    pose_t = load_pose_render(pose_p, (seg_w, seg_h)).to(device)
+    pose_t = pose_t.mul(2.0).sub(1.0)
 
     # ─── 4) Inference ───────────────────────────────────────────────────────────────
     with torch.no_grad():
